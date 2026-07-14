@@ -68,6 +68,12 @@ Raw Code-Switched Text
 ```
 Kenyan-Sentiment-API/
 │
+├── backend/
+│   └── main.py                          # FastAPI server with /predict endpoint
+│
+├── frontend/
+│   └── dashboard.py                     # Streamlit UI dashboard
+│
 ├── data/
 │   └── apt3065_final_training_data.csv   # 8,073-row balanced dataset
 │
@@ -78,7 +84,7 @@ Kenyan-Sentiment-API/
 └── README.md
 ```
 
-> **Note:** Additional directories (`src/`, `models/`, `tests/`, `configs/`) will be introduced in subsequent phases.
+> **Note:** Additional directories (`models/`, `tests/`, `configs/`) will be introduced in subsequent phases.
 
 ---
 
@@ -123,6 +129,34 @@ Kenyan-Sentiment-API/
 - **API Framework:** FastAPI
 - **Data Processing:** Pandas, NumPy
 - **Version Control:** Git (GitFlow)
+
+---
+
+## 🖥️ How to Run the UI/UX Dashboard
+
+The project uses a **monorepo** architecture with a FastAPI backend and a Streamlit frontend. You need **two terminals** running simultaneously:
+
+### Terminal 1 — Start the Backend (FastAPI)
+
+```bash
+cd backend
+pip install fastapi uvicorn
+uvicorn main:app --reload
+```
+
+The API will be available at `http://localhost:8000`. You can view the auto-generated docs at `http://localhost:8000/docs`.
+
+### Terminal 2 — Start the Frontend (Streamlit)
+
+```bash
+cd frontend
+pip install streamlit requests
+streamlit run dashboard.py
+```
+
+The dashboard will open automatically at `http://localhost:8501`. Enter any Kenyan code-switched text (e.g., *"hii app inanisumbua sana"*) and click **Analyze Sentiment** to see the prediction.
+
+> **Note:** The backend currently returns mocked predictions. Live inference will be enabled after Phase 3 (Model Training) is complete.
 
 ---
 
