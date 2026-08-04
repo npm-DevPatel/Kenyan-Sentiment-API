@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Support Inbox Simulator — ShengSense AI</title>
+  <meta name="description" content="Simulate a live Kenyan enterprise support inbox with ShengSense AI sentiment tagging and automatic routing." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .mobile-menu { transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .mobile-menu.open { transform: translateX(0); }
+    .nav-link { position: relative; }
+    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#059669; transition: width 0.3s ease; }
+    .nav-link:hover::after { width:100%; }
+    .msg-card { animation: slide-in 0.4s ease backwards; border-left: 3px solid transparent; transition: all 0.2s ease; }
+    .msg-card:hover { transform: translateX(4px); }
+    .msg-card.positive { border-left-color: #10b981; }
+    .msg-card.negative { border-left-color: #f87171; }
+    .msg-card.neutral  { border-left-color: #94a3b8; }
+    @keyframes slide-in { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+    .badge-pos { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+    .badge-neg { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+    .badge-neu { background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; }
+    .routing-escalate { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+    .routing-auto    { background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; }
+    .routing-flag    { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+    .routing-ok      { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+    .ticker-bar { animation: ticker-slide 0.5s ease; }
+    @keyframes ticker-slide { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .spin-anim { animation: spin 1s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    #inbox-feed { scrollbar-width: thin; scrollbar-color: #d1fae5 #f8fafc; }
+    #inbox-feed::-webkit-scrollbar { width: 6px; }
+    #inbox-feed::-webkit-scrollbar-thumb { background: #a7f3d0; border-radius: 99px; }
+  </style>
+</head>
+<body class="font-sans bg-slate-50 text-slate-800 antialiased">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="index.html" class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-brain text-white text-sm"></i>
+          </div>
+          <span class="text-xl font-bold text-slate-800">ShengSense <span class="text-emerald-600">AI</span></span>
+        </a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="index.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Home</a>
+          <a href="playground.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Playground</a>
+          <a href="simulator.html" class="nav-link text-emerald-600 font-semibold text-sm">Simulator</a>
+          <a href="developer.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Developer</a>
+          <a href="admin.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Admin</a>
+        </div>
+        <div class="hidden md:flex items-center gap-3">
+          <a href="playground.html" class="min-h-[44px] flex items-center px-5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-all">
+            Try API <i class="fas fa-arrow-right ml-2 text-xs"></i>
+          </a>
+        </div>
+        <button id="hamburger" aria-label="Open menu" class="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100">
+          <i class="fas fa-bars text-slate-700 text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="mobile-overlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="closeMobileMenu()"></div>
+  <div id="mobile-menu" class="mobile-menu fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl md:hidden flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-slate-100">
+      <span class="font-bold">Menu</span>
+      <button onclick="closeMobileMenu()" class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100">
+        <i class="fas fa-times text-slate-600"></i>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-1">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-home w-4"></i>Home</a>
+      <a href="playground.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-flask w-4"></i>Playground</a>
+      <a href="simulator.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-sm min-h-[44px]"><i class="fas fa-inbox w-4"></i>Simulator</a>
+      <a href="developer.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-code w-4"></i>Developer</a>
+      <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-chart-bar w-4"></i>Admin</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <!-- Header -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div>
+        <div class="text-emerald-600 text-xs font-semibold uppercase tracking-widest mb-2 flex items-center gap-2">
+          LIVE SIMULATION
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-1">Enterprise Support Inbox</h1>
+        <p class="text-slate-500 text-sm">Simulating a Safaricom / Bolt style B2B customer support dashboard with AI sentiment routing.</p>
+      </div>
+      <div class="flex gap-3">
+        <button id="pause-btn" onclick="togglePause()" class="min-h-[44px] flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-all text-sm">
+          <i id="pause-icon" class="fas fa-pause"></i> <span id="pause-label">Pause Feed</span>
+        </button>
+        <button onclick="clearInbox()" class="min-h-[44px] flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all text-sm">
+          <i class="fas fa-trash"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Ticker / Stats Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+        <div class="text-xs text-slate-400 font-medium mb-1">Total Messages</div>
+        <div id="stat-total" class="text-2xl font-black text-slate-800 ticker-bar">0</div>
+      </div>
+      <div class="bg-white rounded-xl border border-emerald-100 shadow-sm p-4">
+        <div class="text-xs text-emerald-600 font-medium mb-1">Positive</div>
+        <div id="stat-pos" class="text-2xl font-black text-emerald-600 ticker-bar">0</div>
+      </div>
+      <div class="bg-white rounded-xl border border-red-100 shadow-sm p-4">
+        <div class="text-xs text-red-500 font-medium mb-1">Negative</div>
+        <div id="stat-neg" class="text-2xl font-black text-red-500 ticker-bar">0</div>
+      </div>
+      <div class="bg-white rounded-xl border border-amber-100 shadow-sm p-4">
+        <div class="text-xs text-amber-600 font-medium mb-1">Escalated</div>
+        <div id="stat-esc" class="text-2xl font-black text-amber-600 ticker-bar">0</div>
+      </div>
+    </div>
+
+    <!-- Main Grid: Inbox + Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Inbox Feed -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-inbox text-emerald-600"></i>
+              <span class="font-bold text-slate-800">Customer Messages</span>
+              <div id="live-badge" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                LIVE
+              </div>
+            </div>
+            <div class="text-xs text-slate-400">ShengSense AI Routing</div>
+          </div>
+
+          <div id="inbox-feed" class="max-h-[600px] overflow-y-auto divide-y divide-slate-50 p-2 space-y-1">
+            <!-- Messages injected here -->
+            <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-slate-300">
+              <i class="fas fa-inbox text-5xl mb-4"></i>
+              <div class="font-medium">Waiting for messages...</div>
+              <div class="text-sm mt-1">Feed starts automatically</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar: Quick Stats + Legend -->
+      <div class="space-y-5">
+
+        <!-- Routing Legend -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div class="font-bold text-slate-800 mb-4 text-sm">Routing Rules</div>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-start gap-3">
+              <span class="routing-escalate text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mt-0.5">⚡ Escalate</span>
+              <span class="text-slate-600">High-confidence NEGATIVE (>85%) — routed to human agent immediately</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="routing-flag text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mt-0.5">🚨 Flag</span>
+              <span class="text-slate-600">NEGATIVE with Sheng frustration keywords — flagged for QA review</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="routing-auto text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mt-0.5">🤖 Auto-Reply</span>
+              <span class="text-slate-600">NEUTRAL — auto-acknowledgement sent, placed in standard queue</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="routing-ok text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mt-0.5">✅ Positive</span>
+              <span class="text-slate-600">POSITIVE — logged for brand monitoring, no action needed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Channel Filter -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div class="font-bold text-slate-800 mb-3 text-sm">Channel Filters</div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 min-h-[44px] cursor-pointer">
+              <input type="checkbox" id="filter-twitter" checked class="accent-emerald-600 w-4 h-4">
+              <i class="fab fa-twitter text-blue-400"></i>
+              <span class="text-sm text-slate-700">Twitter / X</span>
+            </label>
+            <label class="flex items-center gap-2 min-h-[44px] cursor-pointer">
+              <input type="checkbox" id="filter-whatsapp" checked class="accent-emerald-600 w-4 h-4">
+              <i class="fab fa-whatsapp text-emerald-500"></i>
+              <span class="text-sm text-slate-700">WhatsApp</span>
+            </label>
+            <label class="flex items-center gap-2 min-h-[44px] cursor-pointer">
+              <input type="checkbox" id="filter-sms" checked class="accent-emerald-600 w-4 h-4">
+              <i class="fas fa-sms text-slate-400"></i>
+              <span class="text-sm text-slate-700">SMS</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Speed Control -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div class="font-bold text-slate-800 mb-3 text-sm">Feed Speed</div>
+          <input type="range" id="speed-slider" min="1" max="5" value="3" class="w-full accent-emerald-600">
+          <div class="flex justify-between text-xs text-slate-400 mt-1">
+            <span>Slow</span><span>Fast</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 py-8 mt-16">
+    <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+      © 2026 ShengSense AI · <a href="index.html" class="hover:text-emerald-400">Home</a> · <a href="developer.html" class="hover:text-emerald-400">Developer</a>
+    </div>
+  </footer>
+
+<script>
+  // Navbar
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.add('open');
+    document.getElementById('mobile-overlay').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  });
+  function closeMobileMenu() {
+    document.getElementById('mobile-menu').classList.remove('open');
+    document.getElementById('mobile-overlay').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  const MESSAGES = [
+    { channel:'twitter', sender:'@jane_wanjiku', avatar:'JW', text:'Safaricom bado haijafix network yangu, wiki mbili sasa. Stress kabisa! Mbaya sana hii.', label:'NEGATIVE', score:0.952, keywords:['mbaya','stress'] },
+    { channel:'whatsapp', sender:'Kamau Njoroge', avatar:'KN', text:'Poa sana! Fuliza imenisaidia kulipia rent yangu leo. Asante Safaricom, huduma ni top!', label:'POSITIVE', score:0.941, keywords:['poa','fuliza'] },
+    { channel:'sms', sender:'+254712345678', avatar:'??', text:'Nataka kujua kama data bundle yangu bado iko active au imeisha.', label:'NEUTRAL', score:0.783, keywords:[] },
+    { channel:'twitter', sender:'@bolt_user_ke', avatar:'BU', text:'Bolt driver wangu alikuwa mlevu! Uongo kabisa, alinipoteza njiani. Uongo mtupu hii kampuni!', label:'NEGATIVE', score:0.989, keywords:['uongo','mbaya'] },
+    { channel:'whatsapp', sender:'Amina Hassan', avatar:'AH', text:'Jumia delivery ilikuja haraka sana leo, impressed kabisa! Fire service, keep it up!', label:'POSITIVE', score:0.927, keywords:['fire'] },
+    { channel:'sms', sender:'+254798765432', avatar:'??', text:'Mpesa ilishindwa tena! Nimejaribu mara tano, bado haisend. Shida gani hii!', label:'NEGATIVE', score:0.976, keywords:['mpesa','shida'] },
+    { channel:'twitter', sender:'@nairobi_techie', avatar:'NT', text:'Hii ni tight sana bana! Niaje ShengSense inaweza kuelewa Sheng yetu vizuri kabisa.', label:'POSITIVE', score:0.863, keywords:['tight','niaje'] },
+    { channel:'whatsapp', sender:'Brian Otieno', avatar:'BO', text:'Kitu kidogo tu — app yenu inaslow kidogo asubuhi. Si tatizo kubwa.', label:'NEUTRAL', score:0.731, keywords:['tatizo'] },
+    { channel:'twitter', sender:'@safaricom_user', avatar:'SU', text:'Fuliza yangu imezuiwa bila sababu! Nimeweka pesa, wanasema bado deni. Wizi hawa!', label:'NEGATIVE', score:0.994, keywords:['fuliza','wizi'] },
+    { channel:'sms', sender:'+254700123456', avatar:'??', text:'Data imeisha lakini bado simu inafanya kazi vizuri. Sawa tu.', label:'NEUTRAL', score:0.612, keywords:['sawa'] },
+    { channel:'twitter', sender:'@kilimall_fan', avatar:'KF', text:'Nilifanya order Kilimall, delivery mbaya! Ilichelewa sana, customer care hawasaidii. Tabu!', label:'NEGATIVE', score:0.971, keywords:['mbaya','tabu'] },
+    { channel:'whatsapp', sender:'Grace Mwangi', avatar:'GM', text:'Nimefurahi sana na upgrade ya app! Safi kabisa, keep going team!', label:'POSITIVE', score:0.908, keywords:['safi'] },
+    { channel:'twitter', sender:'@nairobi_hustler', avatar:'NH', text:'Hii Airtel data deal ni fire bana! Chapaa ya data nzuri sana, asante!', label:'POSITIVE', score:0.887, keywords:['fire','chapaa'] },
+    { channel:'sms', sender:'+254733456789', avatar:'??', text:'Nataka kuomba ushauri kuhusu mabadiliko ya tariff mpya. Sijui nianze wapi.', label:'NEUTRAL', score:0.804, keywords:[] },
+    { channel:'whatsapp', sender:'Peter Kamau', avatar:'PK', text:'Boda boda alinikimbia! Driver aliondoka bila mimi. Niaje hii inafanyika Bolt?', label:'NEGATIVE', score:0.961, keywords:['niaje'] },
+  ];
+
+  const CHANNEL_ICONS = {
+    twitter: '<i class="fab fa-twitter text-blue-400"></i>',
+    whatsapp: '<i class="fab fa-whatsapp text-emerald-500"></i>',
+    sms: '<i class="fas fa-sms text-slate-400"></i>',
+  };
+
+  const TIMES = ['just now','1m ago','2m ago','3m ago','5m ago'];
+
+  let idx = 0;
+  let paused = false;
+  let totals = { total:0, pos:0, neg:0, esc:0 };
+  let feedInterval;
+
+  function getRouting(msg) {
+    if (msg.label === 'NEGATIVE' && msg.score > 0.85) return { cls:'routing-escalate', text:'⚡ Escalated to Human Agent' };
+    if (msg.label === 'NEGATIVE' && msg.keywords.length > 0) return { cls:'routing-flag', text:'🚨 Flagged for QA Review' };
+    if (msg.label === 'NEUTRAL') return { cls:'routing-auto', text:'🤖 Auto-Reply Sent' };
+    return { cls:'routing-ok', text:'✅ Brand Monitor' };
+  }
+
+  function getSentimentBadge(label) {
+    if (label === 'POSITIVE') return 'badge-pos';
+    if (label === 'NEGATIVE') return 'badge-neg';
+    return 'badge-neu';
+  }
+
+  function isChannelEnabled(channel) {
+    return document.getElementById(`filter-${channel}`)?.checked;
+  }
+
+  function addMessage() {
+    if (paused) return;
+
+    const msg = MESSAGES[idx % MESSAGES.length];
+    idx++;
+
+    if (!isChannelEnabled(msg.channel)) return;
+
+    const routing = getRouting(msg);
+    const sentBadge = getSentimentBadge(msg.label);
+    const confPct = Math.round(msg.score * 100);
+    const time = TIMES[Math.floor(Math.random() * TIMES.length)];
+
+    const el = document.createElement('div');
+    el.className = `msg-card ${msg.label.toLowerCase()} bg-white rounded-xl p-4 border border-slate-100 shadow-sm`;
+    el.style.animationDelay = '0ms';
+
+    el.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">${msg.avatar}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="font-semibold text-slate-800 text-sm">${msg.sender}</span>
+            ${CHANNEL_ICONS[msg.channel]}
+            <span class="text-xs text-slate-400 ml-auto">${time}</span>
+          </div>
+          <p class="text-slate-700 text-sm leading-relaxed mb-2">${msg.text}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="${sentBadge} text-xs font-bold px-2 py-0.5 rounded-full">${msg.label} · ${confPct}%</span>
+            <span class="${routing.cls} text-xs font-semibold px-2 py-0.5 rounded-full">${routing.text}</span>
+            ${msg.keywords.map(k=>`<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2 py-0.5 rounded-full">${k}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const feed = document.getElementById('inbox-feed');
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.remove();
+
+    feed.insertBefore(el, feed.firstChild);
+
+    // Keep max 40 messages
+    const msgs = feed.querySelectorAll('.msg-card');
+    if (msgs.length > 40) msgs[msgs.length-1].remove();
+
+    // Update stats
+    totals.total++;
+    if (msg.label === 'POSITIVE') totals.pos++;
+    if (msg.label === 'NEGATIVE') { totals.neg++; if (msg.score > 0.85) totals.esc++; }
+
+    document.getElementById('stat-total').textContent = totals.total;
+    document.getElementById('stat-pos').textContent = totals.pos;
+    document.getElementById('stat-neg').textContent = totals.neg;
+    document.getElementById('stat-esc').textContent = totals.esc;
+  }
+
+  function getDelay() {
+    const v = parseInt(document.getElementById('speed-slider').value);
+    return [5000, 3500, 2200, 1200, 600][v-1];
+  }
+
+  function startFeed() {
+    clearInterval(feedInterval);
+    feedInterval = setInterval(() => {
+      addMessage();
+      clearInterval(feedInterval);
+      startFeed(); // reschedule with current speed
+    }, getDelay());
+  }
+
+  function togglePause() {
+    paused = !paused;
+    document.getElementById('pause-icon').className = paused ? 'fas fa-play' : 'fas fa-pause';
+    document.getElementById('pause-label').textContent = paused ? 'Resume Feed' : 'Pause Feed';
+    document.getElementById('live-badge').innerHTML = paused
+      ? '<i class="fas fa-pause text-[10px] mr-1"></i> PAUSED'
+      : 'LIVE';
+  }
+
+  function clearInbox() {
+    const feed = document.getElementById('inbox-feed');
+    feed.innerHTML = '<div id="empty-state" class="flex flex-col items-center justify-center py-16 text-slate-300"><i class="fas fa-inbox text-5xl mb-4"></i><div class="font-medium">Waiting for messages...</div></div>';
+    totals = { total:0, pos:0, neg:0, esc:0 };
+    ['stat-total','stat-pos','stat-neg','stat-esc'].forEach(id => document.getElementById(id).textContent = '0');
+  }
+
+  document.getElementById('speed-slider').addEventListener('input', () => {
+    clearInterval(feedInterval);
+    startFeed();
+  });
+
+  // Kick off
+  startFeed();
+  // Add a few messages immediately on load
+  setTimeout(addMessage, 300);
+  setTimeout(addMessage, 800);
+  setTimeout(addMessage, 1500);
+</script>
+</body>
+</html>

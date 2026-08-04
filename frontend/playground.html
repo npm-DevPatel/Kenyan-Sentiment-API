@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Playground — ShengSense AI</title>
+  <meta name="description" content="Test ShengSense AI vs the XLM-R baseline live. Paste any Sheng, Swahili, or English text and compare sentiment results instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .mobile-menu { transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .mobile-menu.open { transform: translateX(0); }
+    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#059669; transition: width 0.3s ease; }
+    .nav-link:hover::after { width:100%; }
+    .nav-link { position: relative; }
+    .confidence-bar { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+    .result-card { transition: all 0.3s ease; }
+    .preset-chip { cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+    .preset-chip:hover { transform: scale(1.05); }
+    .preset-chip:active { transform: scale(0.97); }
+    .spin-anim { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes result-pop { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+    .result-pop { animation: result-pop 0.4s ease forwards; }
+    .keyword-chip { animation: pop-in 0.3s ease backwards; }
+    @keyframes pop-in { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+    textarea:focus { outline: none; }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+  </style>
+</head>
+<body class="font-sans bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="index.html" class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-brain text-white text-sm"></i>
+          </div>
+          <span class="text-xl font-bold text-slate-800">ShengSense <span class="text-emerald-600">AI</span></span>
+        </a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="index.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors">Home</a>
+          <a href="playground.html" class="nav-link text-emerald-600 font-semibold text-sm">Playground</a>
+          <a href="simulator.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors">Simulator</a>
+          <a href="developer.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors">Developer</a>
+          <a href="admin.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors">Admin</a>
+        </div>
+        <div class="hidden md:flex items-center gap-3">
+          <a href="developer.html" class="min-h-[44px] flex items-center px-5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-all">
+            Get API Key <i class="fas fa-arrow-right ml-2 text-xs"></i>
+          </a>
+        </div>
+        <button id="hamburger" aria-label="Open menu" class="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors">
+          <i class="fas fa-bars text-slate-700 text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="mobile-overlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="closeMobileMenu()"></div>
+  <div id="mobile-menu" class="mobile-menu fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl md:hidden flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-slate-100">
+      <span class="font-bold text-slate-800">Menu</span>
+      <button onclick="closeMobileMenu()" class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100">
+        <i class="fas fa-times text-slate-600"></i>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-1">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-home w-4"></i>Home</a>
+      <a href="playground.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-sm min-h-[44px]"><i class="fas fa-flask w-4"></i>Playground</a>
+      <a href="simulator.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-inbox w-4"></i>Simulator</a>
+      <a href="developer.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-code w-4"></i>Developer</a>
+      <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-chart-bar w-4"></i>Admin</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <!-- Page Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-2 text-emerald-600 text-xs font-semibold uppercase tracking-widest mb-2">
+        Live API Demo
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2">Sentiment Playground</h1>
+      <p class="text-slate-500 text-sm sm:text-base max-w-2xl">
+        Test any Sheng, Swahili, or English text using ShengSense's 93%-accuracy fine-tuned enterprise model.
+      </p>
+    </div>
+
+    <!-- Preset Chips -->
+    <div class="mb-6">
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Quick Test Presets</div>
+      <div class="flex overflow-x-auto gap-2 py-2 scrollbar-hide -mx-1 px-1">
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Honestly Bolt app customer careee walinisaidia bro fast, pole pole wanaboresha 🔥🔥">😊 Positive Sheng</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Ai Uber Kenyaaa dere amenikataa booking mara tatu, hii ni mbaya kabisa 😞">😠 Negative Sheng</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Sijui kama Bolt app ni bora kuliko Uber, both have pros and cons">😐 Mixed Neutral</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Nashukuru Tala customer care walinisaidia kurudisha 10k ilikuwa imepotea, huduma ni poaaa">💚 Fintech Positive</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Bolt support yao hawajibu calls zangu, hii huduma ni ya kuninoma kabisa, wame-ignore complaint yangu">🚗 Ride Complaint</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Anyone knows Telkom customer care number mpyaaaa?">💬 Telkom Inquiry</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Honestly Uber customer care walinisaidia jamani fast, pole pole wanaboresha 😂🔥">🔥 Ride Positive</button>
+        <button class="preset-chip min-h-[44px] flex items-center bg-white border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm" data-text="Manze nimetuma pesa kwa wrong number kupitia Equitel na hawawezi kurudisha, customer care ni story mbaya">💳 Fintech Complaint</button>
+      </div>
+    </div>
+
+    <!-- API Key Input -->
+    <div class="mb-4">
+      <label for="api-key-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">API Key (for ShengSense custom model)</label>
+      <input id="api-key-input" type="password" placeholder="sk_live_... (required for ShengSense model)" autocomplete="off"
+        class="w-full min-h-[44px] px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-mono text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
+      <div class="text-xs text-slate-400 mt-1">Don't have a key? <a href="developer.html" class="text-emerald-600 hover:underline">Generate one free →</a></div>
+    </div>
+
+    <!-- Text Input Area -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-6">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <i class="fas fa-pen-to-square text-emerald-500"></i> Input Text
+        </div>
+        <div id="char-count" class="text-xs text-slate-400">0 / 500 chars</div>
+      </div>
+      <div class="p-4">
+        <textarea id="text-input" rows="4" maxlength="500" placeholder="Type or paste Sheng, Swahili, or English text here...&#10;e.g. 'Mpesa ilishindwa tena! Mbaya sana, shida kubwa!'"
+          class="w-full resize-none bg-transparent text-slate-800 text-base leading-relaxed placeholder-slate-300 border-none focus:outline-none"></textarea>
+      </div>
+      <div class="px-4 pb-4 flex flex-col sm:flex-row gap-3">
+        <button id="analyze-btn" onclick="analyze()"
+          class="min-h-[44px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-sm hover:shadow-emerald-200 text-sm">
+          <i id="analyze-icon" class="fas fa-wand-magic-sparkles"></i>
+          <span id="analyze-label">Analyse Sentiment</span>
+        </button>
+        <button onclick="clearAll()" class="min-h-[44px] flex items-center justify-center gap-2 px-5 py-3 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all text-sm">
+          <i class="fas fa-rotate-left"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-section" class="max-w-3xl mx-auto hidden">
+      <!-- ShengSense Result -->
+      <div id="custom-card" class="bg-white border-2 border-emerald-200 rounded-2xl shadow-sm overflow-hidden result-card">
+        <div class="bg-emerald-50 px-5 py-3 flex items-center justify-between border-b border-emerald-100">
+          <div>
+            <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">ShengSense AI</div>
+            <div class="text-sm font-bold text-slate-700">Fine-tuned XLM-RoBERTa</div>
+          </div>
+          <span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">93% acc</span>
+        </div>
+        <div class="p-5">
+          <div id="custom-loading" class="flex items-center gap-3 text-slate-400 text-sm py-4 hidden">
+            <i class="fas fa-circle-notch spin-anim text-emerald-500"></i> Running ShengSense inference...
+          </div>
+          <div id="custom-result" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+              <div id="custom-label-badge" class="text-lg font-extrabold"></div>
+              <div id="custom-time" class="text-xs text-slate-400"></div>
+            </div>
+            <div class="mb-4">
+              <div class="flex justify-between text-xs text-slate-500 mb-1">
+                <span>Confidence</span>
+                <span id="custom-score-txt"></span>
+              </div>
+              <div class="w-full bg-emerald-50 rounded-full h-2.5">
+                <div id="custom-score-bar" class="confidence-bar h-2.5 rounded-full bg-emerald-500" style="width:0%"></div>
+              </div>
+            </div>
+            <!-- Keywords -->
+            <div id="keywords-section">
+              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sheng / Swahili Keywords Detected</div>
+              <div id="keywords-container" class="flex flex-wrap gap-2"></div>
+              <div id="no-keywords" class="text-xs text-slate-400 italic hidden">No specific Sheng/Swahili tokens detected.</div>
+            </div>
+          </div>
+          <div id="custom-error" class="hidden">
+            <div class="text-amber-600 text-sm bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <i class="fas fa-triangle-exclamation mr-2"></i>
+              <span id="custom-error-text"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 py-8 mt-16">
+    <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+      © 2026 ShengSense AI · <a href="index.html" class="hover:text-emerald-400">Home</a> · <a href="developer.html" class="hover:text-emerald-400">Developer</a>
+    </div>
+  </footer>
+
+<script>
+  const API_BASE = 'http://localhost:8000';
+
+  // Navbar
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.add('open');
+    document.getElementById('mobile-overlay').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  });
+  function closeMobileMenu() {
+    document.getElementById('mobile-menu').classList.remove('open');
+    document.getElementById('mobile-overlay').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  // Char counter
+  const textInput = document.getElementById('text-input');
+  const charCount = document.getElementById('char-count');
+  textInput.addEventListener('input', () => {
+    charCount.textContent = `${textInput.value.length} / 500 chars`;
+  });
+
+  // API key persistence — restore from sessionStorage on load
+  const apiKeyInput = document.getElementById('api-key-input');
+  const STORED_KEY = sessionStorage.getItem('ss_api_key');
+  if (STORED_KEY) apiKeyInput.value = STORED_KEY;
+  apiKeyInput.addEventListener('input', () => {
+    const val = apiKeyInput.value.trim();
+    if (val) sessionStorage.setItem('ss_api_key', val);
+    else sessionStorage.removeItem('ss_api_key');
+  });
+
+  // Preset chips
+  document.querySelectorAll('.preset-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      textInput.value = chip.dataset.text;
+      charCount.textContent = `${textInput.value.length} / 500 chars`;
+    });
+  });
+
+  function clearAll() {
+    textInput.value = '';
+    charCount.textContent = '0 / 500 chars';
+    document.getElementById('results-section').classList.add('hidden');
+  }
+
+  const LABEL_STYLES = {
+    POSITIVE: { text: '✅ POSITIVE', cls: 'text-emerald-600' },
+    NEGATIVE: { text: '❌ NEGATIVE', cls: 'text-red-500' },
+    NEUTRAL:  { text: '➖ NEUTRAL',  cls: 'text-slate-500' },
+  };
+
+  function renderLabel(el, label) {
+    const style = LABEL_STYLES[label] || { text: label, cls: 'text-slate-700' };
+    el.textContent = style.text;
+    el.className = `text-lg font-extrabold ${style.cls}`;
+  }
+
+  function setLoading(prefix, isLoading) {
+    document.getElementById(`${prefix}-loading`).classList.toggle('hidden', !isLoading);
+    document.getElementById(`${prefix}-result`).classList.add('hidden');
+    document.getElementById(`${prefix}-error`).classList.add('hidden');
+  }
+
+  async function analyze() {
+    const text = textInput.value.trim();
+    if (!text) { textInput.focus(); return; }
+
+    const apiKey = document.getElementById('api-key-input').value.trim();
+    const btn = document.getElementById('analyze-btn');
+    const icon = document.getElementById('analyze-icon');
+    const label = document.getElementById('analyze-label');
+
+    btn.disabled = true;
+    btn.classList.add('opacity-75');
+    icon.className = 'fas fa-circle-notch spin-anim';
+    label.textContent = 'Analysing...';
+
+    document.getElementById('results-section').classList.remove('hidden');
+
+    setLoading('custom', true);
+
+    try {
+      const customResult = await fetchCustom(text, apiKey);
+      renderCustom(customResult);
+    } catch (err) {
+      showCustomError(err);
+    }
+
+    btn.disabled = false;
+    btn.classList.remove('opacity-75');
+    icon.className = 'fas fa-wand-magic-sparkles';
+    label.textContent = 'Analyse Sentiment';
+  }
+
+
+
+  async function fetchCustom(text, apiKey) {
+    if (!apiKey) throw new Error('Enter your API key to use the ShengSense custom model. Generate one free on the Developer page.');
+    const res = await fetch(`${API_BASE}/predict/custom`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  function showCustomError(err) {
+    setLoading('custom', false);
+    const el = document.getElementById('custom-error');
+    el.classList.remove('hidden');
+    document.getElementById('custom-error-text').textContent = err.message || String(err);
+  }
+
+  function renderCustom(data) {
+    setLoading('custom', false);
+    const el = document.getElementById('custom-result');
+    el.classList.remove('hidden');
+    el.classList.add('result-pop');
+
+    renderLabel(document.getElementById('custom-label-badge'), data.label);
+    document.getElementById('custom-time').textContent = `${data.processing_time_ms}ms`;
+
+    const pct = Math.round(data.score * 100);
+    document.getElementById('custom-score-txt').textContent = `${pct}%`;
+    setTimeout(() => {
+      document.getElementById('custom-score-bar').style.width = `${pct}%`;
+    }, 100);
+
+    // Keywords
+    const container = document.getElementById('keywords-container');
+    const noKw = document.getElementById('no-keywords');
+    container.innerHTML = '';
+
+    if (data.keywords && data.keywords.length > 0) {
+      noKw.classList.add('hidden');
+      data.keywords.forEach((kw, i) => {
+        const span = document.createElement('span');
+        span.className = 'keyword-chip inline-flex bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full px-3 py-1 text-sm font-medium';
+        span.style.animationDelay = `${i * 80}ms`;
+        span.textContent = kw;
+        container.appendChild(span);
+      });
+    } else {
+      noKw.classList.remove('hidden');
+    }
+  }
+
+
+</script>
+</body>
+</html>

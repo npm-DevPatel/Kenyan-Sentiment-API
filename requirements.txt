@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic
+transformers
+torch
+firebase-admin
+pyrebase4
+pandas
+python-multipart

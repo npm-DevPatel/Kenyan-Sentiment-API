@@ -1,0 +1,48 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ── Secrets & Credentials ───────────────────────────────────────────────────
+config/firebase_credentials.json
+.env
+*.env
+.env.local
+.env.production
+frontend/.env
+!frontend/.env.example
+
+# ── Model weights (too large for git) ───────────────────────────────────────
+backend/Trained_Model/*.safetensors
+backend/Trained_Model/*.bin
+backend/Baseline_Model/
+
+# Keep the config/tokenizer files so the repo shows structure
+!backend/Trained_Model/config.json
+!backend/Trained_Model/tokenizer.json
+!backend/Trained_Model/tokenizer_config.json
+
+# ── IDE & OS ─────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs & temp ──────────────────────────────────────────────────────────────
+*.log
+*.tmp
+logs/

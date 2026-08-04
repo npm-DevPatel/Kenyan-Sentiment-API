@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Portal — ShengSense AI</title>
+  <meta name="description" content="Generate API keys, view usage quotas, and access code samples for Python, JavaScript, and cURL — ShengSense AI Developer Portal." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans:['Inter','sans-serif'], mono:['JetBrains Mono','monospace'] } } }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .mobile-menu { transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .mobile-menu.open { transform: translateX(0); }
+    .nav-link { position: relative; }
+    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#059669; transition: width 0.3s ease; }
+    .nav-link:hover::after { width:100%; }
+    .tab-btn { border-bottom: 2px solid transparent; transition: all 0.2s ease; }
+    .tab-btn.active { border-bottom-color: #059669; color: #059669; font-weight: 600; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .code-block::-webkit-scrollbar { height: 6px; }
+    .code-block::-webkit-scrollbar-thumb { background: #475569; border-radius: 99px; }
+    .quota-bar { transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+    .spin-anim { animation: spin 1s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .key-reveal { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+    .copied-toast { animation: toast-pop 0.3s ease; }
+    @keyframes toast-pop { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+    .auth-card-tab { border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
+    .auth-card-tab.active { border-bottom-color: #059669; color: #059669; font-weight: 600; }
+  </style>
+</head>
+<body class="font-sans bg-slate-50 text-slate-800 antialiased">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="index.html" class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-brain text-white text-sm"></i>
+          </div>
+          <span class="text-xl font-bold text-slate-800">ShengSense <span class="text-emerald-600">AI</span></span>
+        </a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="index.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Home</a>
+          <a href="playground.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Playground</a>
+          <a href="simulator.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Simulator</a>
+          <a href="developer.html" class="nav-link text-emerald-600 font-semibold text-sm">Developer</a>
+          <a href="admin.html" class="nav-link text-slate-600 hover:text-slate-900 font-medium text-sm">Admin</a>
+        </div>
+        <button id="hamburger" aria-label="Open menu" class="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100">
+          <i class="fas fa-bars text-slate-700 text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="mobile-overlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="closeMobileMenu()"></div>
+  <div id="mobile-menu" class="mobile-menu fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl md:hidden flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-slate-100">
+      <span class="font-bold">Menu</span>
+      <button onclick="closeMobileMenu()" class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-1">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-home w-4"></i>Home</a>
+      <a href="playground.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-flask w-4"></i>Playground</a>
+      <a href="simulator.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-inbox w-4"></i>Simulator</a>
+      <a href="developer.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-sm min-h-[44px]"><i class="fas fa-code w-4"></i>Developer</a>
+      <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-700 font-medium text-sm min-h-[44px]"><i class="fas fa-chart-bar w-4"></i>Admin</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <div class="mb-8">
+      <div class="text-emerald-600 text-xs font-semibold uppercase tracking-widest mb-2">Developer Hub</div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2">Developer Portal</h1>
+      <p class="text-slate-500 text-sm max-w-2xl">Manage your API keys, monitor usage quotas, and integrate ShengSense into your app with copy-paste code examples.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Auth Card (Left) -->
+      <div class="lg:col-span-1">
+        <div id="auth-section" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden max-w-md mx-auto lg:mx-0">
+          <!-- Auth Tabs -->
+          <div class="flex border-b border-slate-100">
+            <button id="tab-login" class="auth-card-tab active flex-1 py-3.5 text-sm text-center" onclick="switchAuth('login')">Sign In</button>
+            <button id="tab-signup" class="auth-card-tab flex-1 py-3.5 text-sm text-slate-500 text-center" onclick="switchAuth('signup')">Create Account</button>
+          </div>
+
+          <!-- Login Form -->
+          <div id="login-form" class="p-6">
+            <div class="mb-4">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
+              <input id="login-email" type="email" placeholder="dev@yourcompany.com"
+                class="w-full min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all" />
+            </div>
+            <div class="mb-5">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+              <input id="login-password" type="password" placeholder="••••••••"
+                class="w-full min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all" />
+            </div>
+            <button id="login-btn" onclick="doLogin()"
+              class="w-full min-h-[44px] bg-emerald-600 text-white font-semibold text-sm rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+              <i id="login-icon" class="fas fa-arrow-right-to-bracket"></i> Sign In
+            </button>
+            <div id="login-msg" class="mt-3 text-sm text-center hidden"></div>
+          </div>
+
+          <!-- Signup Form -->
+          <div id="signup-form" class="p-6 hidden">
+            <div class="mb-4">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
+              <input id="signup-name" type="text" placeholder="Jane Wanjiku"
+                class="w-full min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all" />
+            </div>
+            <div class="mb-4">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
+              <input id="signup-email" type="email" placeholder="dev@yourcompany.com"
+                class="w-full min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all" />
+            </div>
+            <div class="mb-5">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+              <input id="signup-password" type="password" placeholder="••••••••"
+                class="w-full min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all" />
+            </div>
+            <button id="signup-btn" onclick="doSignup()"
+              class="w-full min-h-[44px] bg-emerald-600 text-white font-semibold text-sm rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+              <i class="fas fa-user-plus"></i> Create Account
+            </button>
+            <div id="signup-msg" class="mt-3 text-sm text-center hidden"></div>
+          </div>
+        </div>
+
+        <!-- API Key Manager (visible after login) -->
+        <div id="key-manager" class="hidden mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-md mx-auto lg:mx-0">
+          <div class="flex items-center justify-between mb-4">
+            <div class="font-bold text-slate-800">API Key Manager</div>
+            <button onclick="doLogout()" class="text-xs text-slate-400 hover:text-red-500 transition-colors">
+              <i class="fas fa-sign-out-alt mr-1"></i>Sign out
+            </button>
+          </div>
+
+          <div id="user-info" class="flex items-center gap-3 mb-5 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+            <div class="w-9 h-9 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm" id="user-avatar">—</div>
+            <div>
+              <div class="font-semibold text-slate-800 text-sm" id="user-name-display">—</div>
+              <div class="text-xs text-slate-500" id="user-email-display">—</div>
+            </div>
+          </div>
+
+          <!-- Current Key Display -->
+          <div id="key-display-section" class="mb-5 hidden">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Your Active API Key</div>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 bg-slate-900 text-emerald-400 font-mono text-xs px-3 py-2.5 rounded-lg overflow-x-auto key-reveal" id="key-display">sk_live_...</div>
+              <button onclick="copyKey()" class="min-h-[44px] min-w-[44px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors" title="Copy key">
+                <i class="fas fa-copy text-slate-600 text-sm"></i>
+              </button>
+            </div>
+            <div id="copy-toast" class="hidden copied-toast mt-1.5 text-xs text-emerald-600 font-medium">✅ Copied to clipboard!</div>
+          </div>
+
+          <!-- Quota Meter -->
+          <div id="quota-section" class="mb-5 hidden">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Monthly Usage</div>
+              <div class="text-xs font-bold text-slate-700" id="quota-display">0 / 10,000 calls</div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-3">
+              <div id="quota-bar" class="quota-bar h-3 rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
+            </div>
+            <div class="text-xs text-slate-400 mt-1" id="quota-reset">Resets on Sep 1, 2026</div>
+          </div>
+
+          <button id="gen-key-btn" onclick="generateKey()"
+            class="w-full min-h-[44px] bg-emerald-600 text-white font-semibold text-sm rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-emerald-200">
+            <i id="gen-key-icon" class="fas fa-key"></i>
+            <span id="gen-key-label">Generate New API Key</span>
+          </button>
+          <div class="text-xs text-slate-400 mt-2 text-center">Generating a new key will revoke the previous one.</div>
+        </div>
+      </div>
+
+      <!-- Code Samples (Right) -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Code Tabs -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="flex items-center border-b border-slate-100 overflow-x-auto">
+            <button id="code-tab-python" onclick="switchCodeTab('python')" class="tab-btn active whitespace-nowrap px-5 py-3.5 text-sm text-slate-600 min-h-[44px]">
+              <i class="fab fa-python mr-2 text-blue-400"></i>Python
+            </button>
+            <button id="code-tab-js" onclick="switchCodeTab('js')" class="tab-btn whitespace-nowrap px-5 py-3.5 text-sm text-slate-500 min-h-[44px]">
+              <i class="fab fa-js-square mr-2 text-yellow-400"></i>JavaScript
+            </button>
+            <button id="code-tab-curl" onclick="switchCodeTab('curl')" class="tab-btn whitespace-nowrap px-5 py-3.5 text-sm text-slate-500 min-h-[44px]">
+              <i class="fas fa-terminal mr-2 text-slate-400"></i>cURL
+            </button>
+          </div>
+
+          <!-- Python -->
+          <div id="code-pane-python" class="tab-pane active">
+            <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+              <span class="text-xs text-slate-400 font-mono">predict_sentiment.py</span>
+              <button onclick="copyCode('python')" class="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+            <div class="overflow-x-auto bg-slate-900 rounded-b-2xl code-block">
+              <pre class="text-slate-100 font-mono text-sm p-5 leading-relaxed"><span class="text-purple-400">import</span> requests
+
+API_URL <span class="text-slate-400">=</span> <span class="text-yellow-300">"http://localhost:8000/predict/custom"</span>
+API_KEY <span class="text-slate-400">=</span> <span class="text-yellow-300">"sk_live_YOUR_KEY_HERE"</span>  <span class="text-slate-500"># ← paste your key</span>
+
+<span class="text-blue-400">def</span> <span class="text-green-400">analyse_sheng</span>(text: <span class="text-orange-400">str</span>) -> <span class="text-orange-400">dict</span>:
+    response <span class="text-slate-400">=</span> requests.post(
+        API_URL,
+        headers<span class="text-slate-400">=</span>{<span class="text-yellow-300">"X-API-Key"</span>: API_KEY},
+        json<span class="text-slate-400">=</span>{<span class="text-yellow-300">"text"</span>: text},
+        timeout<span class="text-slate-400">=</span><span class="text-blue-300">10</span>
+    )
+    response.raise_for_status()
+    <span class="text-purple-400">return</span> response.json()
+
+<span class="text-slate-500"># Example usage</span>
+result <span class="text-slate-400">=</span> analyse_sheng(<span class="text-yellow-300">"Mpesa ilishindwa tena! Shida kubwa!"</span>)
+
+<span class="text-blue-400">print</span>(<span class="text-purple-400">f</span><span class="text-yellow-300">"Label: {result['label']}"</span>)
+<span class="text-blue-400">print</span>(<span class="text-purple-400">f</span><span class="text-yellow-300">"Score: {result['score']:.2%}"</span>)
+<span class="text-blue-400">print</span>(<span class="text-purple-400">f</span><span class="text-yellow-300">"Keywords: {', '.join(result['keywords'])}"</span>)
+<span class="text-blue-400">print</span>(<span class="text-purple-400">f</span><span class="text-yellow-300">"Latency: {result['processing_time_ms']}ms"</span>)</pre>
+            </div>
+          </div>
+
+          <!-- JavaScript -->
+          <div id="code-pane-js" class="tab-pane">
+            <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+              <span class="text-xs text-slate-400 font-mono">shengsense.js</span>
+              <button onclick="copyCode('js')" class="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+            <div class="overflow-x-auto bg-slate-900 rounded-b-2xl code-block">
+              <pre class="text-slate-100 font-mono text-sm p-5 leading-relaxed"><span class="text-purple-400">const</span> API_URL <span class="text-slate-400">=</span> <span class="text-yellow-300">'http://localhost:8000/predict/custom'</span>;
+<span class="text-purple-400">const</span> API_KEY <span class="text-slate-400">=</span> <span class="text-yellow-300">'sk_live_YOUR_KEY_HERE'</span>;  <span class="text-slate-500">// ← paste your key</span>
+
+<span class="text-purple-400">async function</span> <span class="text-green-400">analyseSheng</span>(text) {
+  <span class="text-purple-400">const</span> res <span class="text-slate-400">=</span> <span class="text-purple-400">await</span> <span class="text-blue-400">fetch</span>(API_URL, {
+    method: <span class="text-yellow-300">'POST'</span>,
+    headers: {
+      <span class="text-yellow-300">'Content-Type'</span>: <span class="text-yellow-300">'application/json'</span>,
+      <span class="text-yellow-300">'X-API-Key'</span>: API_KEY
+    },
+    body: <span class="text-blue-400">JSON.stringify</span>({ text })
+  });
+
+  <span class="text-purple-400">if</span> (!res.ok) <span class="text-purple-400">throw new</span> Error(<span class="text-purple-400">`HTTP ${</span>res.status<span class="text-purple-400">}`</span>);
+  <span class="text-purple-400">return</span> res.json();
+}
+
+<span class="text-slate-500">// Example usage</span>
+analyseSheng(<span class="text-yellow-300">'Poa sana! Safaricom ni top kabisa.'</span>)
+  .then(data <span class="text-slate-400">=></span> {
+    console.<span class="text-blue-400">log</span>(<span class="text-yellow-300">'Label:'</span>, data.label);
+    console.<span class="text-blue-400">log</span>(<span class="text-yellow-300">'Score:'</span>, data.score);
+    console.<span class="text-blue-400">log</span>(<span class="text-yellow-300">'Keywords:'</span>, data.keywords);
+    console.<span class="text-blue-400">log</span>(<span class="text-yellow-300">'Latency (ms):'</span>, data.processing_time_ms);
+  })
+  .catch(console.error);</pre>
+            </div>
+          </div>
+
+          <!-- cURL -->
+          <div id="code-pane-curl" class="tab-pane">
+            <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+              <span class="text-xs text-slate-400 font-mono">terminal</span>
+              <button onclick="copyCode('curl')" class="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+            <div class="overflow-x-auto bg-slate-900 rounded-b-2xl code-block">
+              <pre class="text-slate-100 font-mono text-sm p-5 leading-relaxed"><span class="text-slate-500"># Predict with ShengSense custom model</span>
+<span class="text-green-400">curl</span> -X POST http://localhost:8000/predict/custom \
+  -H <span class="text-yellow-300">"Content-Type: application/json"</span> \
+  -H <span class="text-yellow-300">"X-API-Key: sk_live_YOUR_KEY_HERE"</span> \
+  -d <span class="text-yellow-300">'{"text": "Mpesa ilishindwa tena! Shida sana!"}'</span>
+
+<span class="text-slate-500"># Admin analytics</span>
+<span class="text-green-400">curl</span> http://localhost:8000/admin/analytics
+
+<span class="text-slate-500"># Health check</span>
+<span class="text-green-400">curl</span> http://localhost:8000/health</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Reference Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="font-bold text-slate-800">API Reference</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[560px]">
+              <thead class="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Method</th>
+                  <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Endpoint</th>
+                  <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Auth</th>
+                  <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-50">
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">POST</span></td>
+                  <td class="px-6 py-4 font-mono text-xs text-slate-700">/predict/custom</td>
+                  <td class="px-6 py-4"><span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded">API Key</span></td>
+                  <td class="px-6 py-4 text-slate-600">ShengSense fine-tuned model (93% acc)</td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-6 py-4"><span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded">GET</span></td>
+                  <td class="px-6 py-4 font-mono text-xs text-slate-700">/admin/analytics</td>
+                  <td class="px-6 py-4"><span class="text-emerald-600 text-xs">Public</span></td>
+                  <td class="px-6 py-4 text-slate-600">Aggregated metrics from Firestore logs</td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-6 py-4"><span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded">GET</span></td>
+                  <td class="px-6 py-4 font-mono text-xs text-slate-700">/health</td>
+                  <td class="px-6 py-4"><span class="text-emerald-600 text-xs">Public</span></td>
+                  <td class="px-6 py-4 text-slate-600">Model load status & Firebase connectivity</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Response Schema -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="font-bold text-slate-800">Response Schema</h2>
+          </div>
+          <div class="overflow-x-auto bg-slate-900 rounded-b-2xl code-block">
+            <pre class="text-slate-100 font-mono text-sm p-5 leading-relaxed">{
+  <span class="text-yellow-300">"label"</span>:              <span class="text-blue-300">string</span>,   <span class="text-slate-500">// "POSITIVE" | "NEGATIVE" | "NEUTRAL"</span>
+  <span class="text-yellow-300">"score"</span>:              <span class="text-blue-300">float</span>,    <span class="text-slate-500">// 0.0 – 1.0 confidence</span>
+  <span class="text-yellow-300">"model"</span>:              <span class="text-blue-300">string</span>,   <span class="text-slate-500">// model identifier</span>
+  <span class="text-yellow-300">"processing_time_ms"</span>: <span class="text-blue-300">float</span>,    <span class="text-slate-500">// inference latency</span>
+  <span class="text-yellow-300">"keywords"</span>:           <span class="text-blue-300">string[]</span>  <span class="text-slate-500">// Sheng/Swahili tokens extracted</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 py-8 mt-16">
+    <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+      © 2026 ShengSense AI · <a href="index.html" class="hover:text-emerald-400">Home</a> · <a href="/docs" class="hover:text-emerald-400">API Docs</a>
+    </div>
+  </footer>
+
+<script>
+  // ── Firebase config ─────────────────────────────────────────────────────
+  const FIREBASE_WEB_CONFIG = {
+    apiKey: "AIzaSyDvXN8OcVo9mr3BUp06IOLLuzBgvXvn6sI",
+    authDomain: "shengsense-ai.firebaseapp.com",
+    projectId: "shengsense-ai",
+    storageBucket: "shengsense-ai.firebasestorage.app",
+    messagingSenderId: "151782619782",
+    appId: "1:151782619782:web:12354cfdf6b2c567592f07"
+  };
+
+  // Firebase SDK (loaded lazily)
+  let auth = null, db = null;
+  let firebaseReady = false;
+
+  async function initFirebase() {
+    if (firebaseReady) return;
+    try {
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+      const app = initializeApp(FIREBASE_WEB_CONFIG);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+      window._fbDB = { doc, setDoc, getDoc, updateDoc, collection, addDoc };
+      firebaseReady = true;
+    } catch (e) {
+      // Firebase not configured — use demo/mock mode
+      firebaseReady = false;
+    }
+  }
+
+  // ── Navbar mobile ───────────────────────────────────────────────────────
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.add('open');
+    document.getElementById('mobile-overlay').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  });
+  function closeMobileMenu() {
+    document.getElementById('mobile-menu').classList.remove('open');
+    document.getElementById('mobile-overlay').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  // ── Auth tab ────────────────────────────────────────────────────────────
+  function switchAuth(tab) {
+    document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('signup-form').classList.toggle('hidden', tab !== 'signup');
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  }
+
+  // ── Code tab ────────────────────────────────────────────────────────────
+  function switchCodeTab(lang) {
+    ['python','js','curl'].forEach(l => {
+      document.getElementById(`code-tab-${l}`).classList.toggle('active', l === lang);
+      document.getElementById(`code-pane-${l}`).classList.toggle('active', l === lang);
+    });
+  }
+
+  // ── Auth flows ──────────────────────────────────────────────────────────
+  async function doLogin() {
+    await initFirebase();
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    const msg = document.getElementById('login-msg');
+
+    if (!email || !pass) { showMsg(msg, 'Please enter email and password.', 'error'); return; }
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    document.getElementById('login-icon').className = 'fas fa-circle-notch spin-anim';
+
+    try {
+      if (!firebaseReady) {
+        // Demo mode — simulate successful login
+        await new Promise(r => setTimeout(r, 800));
+        showKeyManager({ email, displayName: email.split('@')[0] });
+        showMsg(msg, '', '');
+        return;
+      }
+      const cred = await window._fbAuth.signInWithEmailAndPassword(auth, email, pass);
+      showKeyManager(cred.user);
+    } catch (e) {
+      showMsg(msg, e.message || 'Login failed.', 'error');
+    } finally {
+      btn.disabled = false;
+      document.getElementById('login-icon').className = 'fas fa-arrow-right-to-bracket';
+    }
+  }
+
+  async function doSignup() {
+    await initFirebase();
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const pass = document.getElementById('signup-password').value;
+    const msg = document.getElementById('signup-msg');
+
+    if (!name || !email || !pass) { showMsg(msg, 'All fields required.', 'error'); return; }
+    if (pass.length < 6) { showMsg(msg, 'Password must be at least 6 characters.', 'error'); return; }
+
+    const btn = document.getElementById('signup-btn');
+    btn.disabled = true;
+
+    try {
+      if (!firebaseReady) {
+        await new Promise(r => setTimeout(r, 800));
+        showMsg(msg, '✅ Account created! Sign in to manage your keys.', 'success');
+        return;
+      }
+      await window._fbAuth.createUserWithEmailAndPassword(auth, email, pass);
+      showMsg(msg, '✅ Account created! Please sign in.', 'success');
+      switchAuth('login');
+    } catch (e) {
+      showMsg(msg, e.message || 'Signup failed.', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function doLogout() {
+    if (auth && window._fbAuth) window._fbAuth.signOut(auth);
+    document.getElementById('key-manager').classList.add('hidden');
+    document.getElementById('auth-section').classList.remove('hidden');
+  }
+
+  function showMsg(el, text, type) {
+    el.textContent = text;
+    el.className = `mt-3 text-sm text-center ${type === 'error' ? 'text-red-500' : 'text-emerald-600'} ${text ? '' : 'hidden'}`;
+  }
+
+  // ── Key Manager ─────────────────────────────────────────────────────────
+  let currentUser = null;
+  let currentKey = null;
+
+  function showKeyManager(user) {
+    currentUser = user;
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('key-manager').classList.remove('hidden');
+    document.getElementById('user-name-display').textContent = user.displayName || user.email?.split('@')[0] || 'User';
+    document.getElementById('user-email-display').textContent = user.email || '';
+    document.getElementById('user-avatar').textContent = (user.displayName || user.email || 'U')[0].toUpperCase();
+
+    // Load existing key
+    loadExistingKey(user.uid || user.email);
+  }
+
+  async function loadExistingKey(uid) {
+    try {
+      if (db && window._fbDB) {
+        const snap = await window._fbDB.getDoc(window._fbDB.doc(db, 'api_keys', uid));
+        if (snap.exists()) {
+          displayKey(snap.data().key, snap.data().usage_count || 0);
+        }
+      }
+    } catch (_) {}
+  }
+
+  function displayKey(key, usage) {
+    currentKey = key;
+    document.getElementById('key-display').textContent = key;
+    document.getElementById('key-display-section').classList.remove('hidden');
+    document.getElementById('quota-section').classList.remove('hidden');
+
+    const pct = Math.min(Math.round((usage / 10000) * 100), 100);
+    document.getElementById('quota-display').textContent = `${usage.toLocaleString()} / 10,000 calls`;
+    setTimeout(() => {
+      document.getElementById('quota-bar').style.width = `${pct}%`;
+      document.getElementById('quota-bar').className = `quota-bar h-3 rounded-full transition-all ${pct > 80 ? 'bg-red-500' : pct > 60 ? 'bg-amber-500' : 'bg-emerald-500'}`;
+    }, 200);
+    document.getElementById('gen-key-label').textContent = 'Rotate API Key';
+  }
+
+  async function generateKey() {
+    const btn = document.getElementById('gen-key-btn');
+    btn.disabled = true;
+    document.getElementById('gen-key-icon').className = 'fas fa-circle-notch spin-anim';
+    document.getElementById('gen-key-label').textContent = 'Generating...';
+
+    await new Promise(r => setTimeout(r, 900));
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const randomStr = Array.from({length:32}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    const key = `sk_live_${randomStr}`;
+
+    // Attempt Firestore save
+    if (db && window._fbDB && currentUser) {
+      try {
+        const uid = currentUser.uid || currentUser.email;
+        await window._fbDB.setDoc(window._fbDB.doc(db, 'api_keys', uid), {
+          key,
+          active: true,
+          usage_count: 0,
+          created_at: new Date(),
+          last_used: null,
+          owner: currentUser.email || uid,
+        });
+      } catch (_) {}
+    }
+
+    displayKey(key, 0);
+
+    btn.disabled = false;
+    document.getElementById('gen-key-icon').className = 'fas fa-key';
+    document.getElementById('gen-key-label').textContent = 'Rotate API Key';
+  }
+
+  function copyKey() {
+    if (!currentKey) return;
+    navigator.clipboard.writeText(currentKey).then(() => {
+      const toast = document.getElementById('copy-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2000);
+    });
+  }
+
+  const CODE_SNIPPETS = {
+    python: `import requests\n\nAPI_URL = "http://localhost:8000/predict/custom"\nAPI_KEY = "sk_live_YOUR_KEY_HERE"\n\ndef analyse_sheng(text: str) -> dict:\n    response = requests.post(\n        API_URL,\n        headers={"X-API-Key": API_KEY},\n        json={"text": text},\n        timeout=10\n    )\n    response.raise_for_status()\n    return response.json()\n\nresult = analyse_sheng("Mpesa ilishindwa tena! Shida kubwa!")\nprint(f"Label: {result['label']}")\nprint(f"Score: {result['score']:.2%}")\nprint(f"Keywords: {', '.join(result['keywords'])}")`,
+    js: `const API_URL = 'http://localhost:8000/predict/custom';\nconst API_KEY = 'sk_live_YOUR_KEY_HERE';\n\nasync function analyseSheng(text) {\n  const res = await fetch(API_URL, {\n    method: 'POST',\n    headers: {\n      'Content-Type': 'application/json',\n      'X-API-Key': API_KEY\n    },\n    body: JSON.stringify({ text })\n  });\n  if (!res.ok) throw new Error(\`HTTP \${res.status}\`);\n  return res.json();\n}\n\nanalyseSheng('Poa sana! Safaricom ni top kabisa.')\n  .then(data => console.log(data))\n  .catch(console.error);`,
+    curl: `# Predict with ShengSense custom model\ncurl -X POST http://localhost:8000/predict/custom \\\n  -H "Content-Type: application/json" \\\n  -H "X-API-Key: sk_live_YOUR_KEY_HERE" \\\n  -d '{"text": "Mpesa ilishindwa tena! Shida sana!"}'\n\n# Admin analytics\ncurl http://localhost:8000/admin/analytics`
+  };
+
+  function copyCode(lang) {
+    navigator.clipboard.writeText(CODE_SNIPPETS[lang]).then(() => {
+      alert('✅ Code copied to clipboard!');
+    });
+  }
+</script>
+</body>
+</html>
